@@ -49,13 +49,13 @@ class TestHarnessSpec extends SpecificationWithJUnit {
       sys.serviceManager must beSome[ActorRef]
     }
 
-    "load test service " in {
+    /*"load test service " in {
       val probe = TestProbe()
       val testService = sys.getService("testservice")
       assert(testService.isDefined, "Test service was not registered")
       probe.send(testService.get, Ready)
       Ready must beEqualTo(probe.expectMsg(Ready))
-    }
+    }*/
 
     "start up component manager " in {
       sys.componentManager must beSome[ActorRef]
