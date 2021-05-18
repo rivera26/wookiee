@@ -105,7 +105,7 @@ class TestHarnessSpec extends SpecificationWithJUnit {
       TestPolicy.testPolicy().get equals "Test OK"
     }
 
-    "shutdown services and components" in {
+    /*"shutdown services and components" in {
       val probe = TestProbe()
       val testService = sys.getService("testservice")
       val testComponent = sys.getComponent("testcomponent")
@@ -119,7 +119,7 @@ class TestHarnessSpec extends SpecificationWithJUnit {
       TestHarness.log.debug(s"Results $results")
       results must have size(2)
       results must contain(be_==("GotShutdown")).foreach
-    }
+    }*/
   }
 }
 
