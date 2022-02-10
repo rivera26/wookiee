@@ -15,9 +15,6 @@
  */
 package com.oracle.infy.wookiee.logging
 
-import ch.qos.logback.core.rolling.RollingFileAppender
+//import ch.qos.logback.core.rolling.RollingFileAppender
 
-class FileAppender[E] extends RollingFileAppender[E] {
-
-  protected override def writeOut(event: E): Unit = {}
-}
+class FileAppender[E] {}

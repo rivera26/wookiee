@@ -19,7 +19,6 @@ package com.oracle.infy.wookiee.test
 import akka.actor._
 import akka.pattern._
 import akka.util.Timeout
-import ch.qos.logback.classic.Level
 import com.oracle.infy.wookiee.HarnessConstants._
 import com.oracle.infy.wookiee.app.Harness
 import com.oracle.infy.wookiee.app.HarnessActor.{GetManagers, ReadyCheck}
@@ -28,6 +27,7 @@ import com.oracle.infy.wookiee.logging.Logger
 import com.oracle.infy.wookiee.service.Service
 import com.oracle.infy.wookiee.service.messages.LoadService
 import com.typesafe.config.{Config, ConfigFactory}
+import org.slf4j.event.Level
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._

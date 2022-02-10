@@ -40,15 +40,17 @@ object Deps {
     import versions._
 
     val curator: ModuleID = "org.apache.curator" % "curator-recipes" % curatorVersion
+
     val curatorLibs: Seq[ModuleID] = Seq(
-      curator exclude("org.apache.zookeeper", "zookeeper"),
-      "org.apache.curator" % "curator-framework" % curatorVersion exclude("org.apache.zookeeper", "zookeeper"),
-      "org.apache.curator" % "curator-x-discovery" % curatorVersion exclude("org.apache.zookeeper", "zookeeper"),
-      test.curatorTest exclude("org.apache.zookeeper", "zookeeper"),
+      curator exclude ("org.apache.zookeeper", "zookeeper"),
+      "org.apache.curator" % "curator-framework" % curatorVersion exclude ("org.apache.zookeeper", "zookeeper"),
+      "org.apache.curator" % "curator-x-discovery" % curatorVersion exclude ("org.apache.zookeeper", "zookeeper"),
+      test.curatorTest exclude ("org.apache.zookeeper", "zookeeper")
     )
 
     val slf4jApi: ModuleID = "org.slf4j" % "slf4j-api" % slf4jVersion
     val jodaTime: ModuleID = "joda-time" % "joda-time" % jodaTimeVersion
+
     val json4sLibs: Seq[ModuleID] = Seq(
       "org.json4s" %% "json4s-jackson" % json4sVersion,
       "org.json4s" %% "json4s-ext" % json4sVersion,
@@ -66,13 +68,14 @@ object Deps {
     val logbackClassic: ModuleID = "ch.qos.logback" % "logback-classic" % logbackVersion
     val akka: ModuleID = "com.typesafe.akka" %% "akka-actor" % akkaVersion
     val akkaStream: ModuleID = "com.typesafe.akka" %% "akka-stream" % akkaVersion
+
     val akkaHttp: Seq[ModuleID] = Seq(
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % akkaHttpJson4sVersion,
       "ch.megard" %% "akka-http-cors" % akkaHttpCorsVersion,
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion % Test,
-      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-      logbackClassic
+      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test
+//      logbackClassic
     )
 
     val scalaStm: ModuleID = "org.scala-stm" %% "scala-stm" % scalaStmVersion
@@ -87,7 +90,9 @@ object Deps {
     )
 
     val guava: ModuleID = "com.google.guava" % "guava" % guavaVersion
-    val zookeeper: ModuleID = "org.apache.zookeeper" % "zookeeper" % zookeeperVersion exclude("org.slf4j", "slf4j-log4j12")
+
+    val zookeeper
+        : ModuleID = "org.apache.zookeeper" % "zookeeper" % zookeeperVersion exclude ("org.slf4j", "slf4j-log4j12")
 
     val log4CatsCore: ModuleID = "org.typelevel" %% "log4cats-core" % log4CatsVersion
     val log4CatsSlf4J: ModuleID = "org.typelevel" %% "log4cats-slf4j" % log4CatsVersion
@@ -175,14 +180,15 @@ object Deps {
     val core: Seq[ModuleID] = Seq(
       akka,
       slf4jApi,
-      logbackClassic,
       jodaTime,
       scalaStm,
       guava,
       curator,
       scalaCollectionCompat,
       fs2
-    ) ++ circe ++ cats
+    ) ++ circe ++ cats ++ Seq(
+//      logbackClassic
+    )
   }
 
   object test {

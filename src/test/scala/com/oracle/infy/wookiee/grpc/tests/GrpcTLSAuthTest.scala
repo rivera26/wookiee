@@ -61,7 +61,7 @@ object GrpcTLSAuthTest {
         )
       )
 
-      val zookeeperDiscoveryPath1 = "/multi/discovery"
+      val zookeeperDiscoveryPath1 = "/multi2/discovery"
 
       val zkFake = new TestingServer()
       val connStr = zkFake.getConnectString
@@ -70,6 +70,7 @@ object GrpcTLSAuthTest {
 
       val ssd: ServerServiceDefinition = MyService.bindService(
         (request: HelloRequest) => {
+          println(request)
           Future.successful(HelloResponse("Hello " ++ request.name))
         },
         mainEC
@@ -130,7 +131,12 @@ object GrpcTLSAuthTest {
 
     Tests {
       test("Communicate over TLS using Authentication") {
-        testBody.map(assert)
+        val tb = testBody
+          .map { a =>
+            println(a)
+            a
+          }
+        tb.map(assert)
       }
     }
   }

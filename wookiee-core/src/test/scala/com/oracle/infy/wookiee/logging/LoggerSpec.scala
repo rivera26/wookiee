@@ -20,11 +20,9 @@ package com.oracle.infy.wookiee.logging
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
-import ch.qos.logback.classic.Level
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-import org.slf4j.LoggerFactory
 
 class LoggerSpec
     extends TestKit(ActorSystem("logger"))
@@ -97,11 +95,7 @@ class LoggerSpec
   }
 
   private def setupAppender(): TestingAppender = {
-    val root = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[ch.qos.logback.classic.Logger]
-    root.setLevel(Level.ALL)
     val appender = new TestingAppender()
-    appender.start()
-    root.addAppender(appender)
     appender
   }
 }

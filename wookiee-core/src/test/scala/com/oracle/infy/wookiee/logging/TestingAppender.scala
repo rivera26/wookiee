@@ -18,15 +18,15 @@
  */
 package com.oracle.infy.wookiee.logging
 
-import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.core.AppenderBase
+//import ch.qos.logback.classic.spi.ILoggingEvent
+//import ch.qos.logback.core.AppenderBase
 
-class TestingAppender extends AppenderBase[ILoggingEvent] {
+class TestingAppender {
 
   var lastMessage: Option[String] = None
-  name = "test"
+//  name = "test"
 
-  override def append(event: ILoggingEvent): Unit = {
-    lastMessage = Some(event.getFormattedMessage)
-  }
+//  override def append(event: ILoggingEvent): Unit = {
+//    lastMessage = Some(event.getFormattedMessage)
+//  }
 }

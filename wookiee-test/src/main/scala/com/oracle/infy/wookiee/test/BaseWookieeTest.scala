@@ -1,7 +1,8 @@
 package com.oracle.infy.wookiee.test
 
 import akka.actor.ActorSystem
-import ch.qos.logback.classic.Level
+import org.slf4j.event.Level
+//import ch.qos.logback.classic.Level
 import com.oracle.infy.wookiee.component.Component
 import com.oracle.infy.wookiee.service.Service
 import com.typesafe.config.{Config, ConfigFactory}

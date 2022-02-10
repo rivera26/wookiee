@@ -15,26 +15,28 @@
  */
 package com.oracle.infy.wookiee.logging
 
-import ch.qos.logback.classic.Level
-import org.slf4j.{Logger => SlfLogger, LoggerFactory}
+//import ch.qos.logback.classic.Level
+import org.slf4j.event.Level
+import org.slf4j.{LoggerFactory, Logger => SlfLogger}
 
 private[oracle] trait Slf4jLogging extends LogProcessor with AkkaLogProcessor {
 
   protected def getRootLevel: Level = {
     LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) match {
-      case classic: ch.qos.logback.classic.Logger => classic.getLevel
-      case logger                                 => translateLevel(logger)
+//      case classic: ch.qos.logback.classic.Logger => classic.getLevel
+      case logger => translateLevel(logger)
     }
   }
 
   def setLogLevel(level: Level): Unit = {
-    LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) match {
-      case classic: ch.qos.logback.classic.Logger => classic.setLevel(level)
-      case log =>
-        log.info(
-          s"Not using 'ch.qos.logback.classic.Logger', actually using '${log.getClass}', so not changing level to $level"
-        )
-    }
+//    LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) match {
+//      case classic: ch.qos.logback.classic.Logger => classic.setLevel(level)
+//      case log =>
+//        log.info(
+//          s"Not using 'ch.qos.logback.classic.Logger', actually using '${log.getClass}', so not changing level to $level"
+//        )
+//    }
+    ()
   }
 
   private def translateLevel(logger: SlfLogger): Level = {
