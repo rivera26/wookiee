@@ -8,7 +8,7 @@ import com.oracle.infy.wookiee.grpc.contract.ListenerContract
 import com.oracle.infy.wookiee.grpc.impl.{Fs2CloseableImpl, WookieeGrpcHostListener, ZookeeperHostnameService}
 import com.oracle.infy.wookiee.grpc.json.HostSerde
 import com.oracle.infy.wookiee.grpc.model.Host
-import com.oracle.infy.wookiee.grpc.tests.{GrpcListenerTest, GrpcLoadBalanceTest}
+import com.oracle.infy.wookiee.grpc.tests.{GrpcListenerTest, GrpcLoadBalanceTest, GrpcMultipleClientsTest, GrpcTLSAuthTest}
 import com.oracle.infy.wookiee.grpc.utils.implicits._
 import fs2.Stream
 import fs2.concurrent.Queue
@@ -99,9 +99,9 @@ object IntegrationConstable extends ConstableCommon {
     val result = runTestsAsync(
       List(
         (grpcTests, "Integration - GrpcTest"),
-        (grpcLoadBalanceTest, "Integration - GrpcLoadBalanceTest") /*,
+        (grpcLoadBalanceTest, "Integration - GrpcLoadBalanceTest"),
         (GrpcMultipleClientsTest.multipleClientTest, "Integration - MultipleClientTest"),
-        (GrpcTLSAuthTest.tests, "Integration - GrpcTLSAuthTest")*/
+        (GrpcTLSAuthTest.tests, "Integration - GrpcTLSAuthTest")
       )
     )
     curator.close()
