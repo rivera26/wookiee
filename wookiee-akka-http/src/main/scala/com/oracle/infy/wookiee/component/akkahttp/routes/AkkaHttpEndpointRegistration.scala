@@ -19,13 +19,16 @@ package com.oracle.infy.wookiee.component.akkahttp.routes
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.ws.TextMessage
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ExceptionHandler, Route}
+import akka.http.scaladsl.server.{Directive0, ExceptionHandler, RejectionHandler, Route}
 import akka.stream.Supervision.Directive
 import akka.stream.{Materializer, Supervision}
+import ch.megard.akka.http.cors.javadsl
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import com.oracle.infy.wookiee.app.HActor
 import com.oracle.infy.wookiee.command.CommandHelper
 import com.oracle.infy.wookiee.component.akkahttp.AkkaHttpManager
+import com.oracle.infy.wookiee.component.akkahttp.logging.AccessLog
 import com.oracle.infy.wookiee.component.akkahttp.routes.EndpointType.EndpointType
 import com.oracle.infy.wookiee.component.akkahttp.routes.RouteGenerator._
 import com.oracle.infy.wookiee.component.akkahttp.websocket.{AkkaHttpWebsocket, WebsocketInterface}
@@ -35,6 +38,7 @@ import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 
 import java.util.concurrent.TimeUnit
+import scala.collection.immutable
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, ExecutionException, Future}
 import scala.reflect.ClassTag
@@ -177,6 +181,29 @@ object AkkaHttpEndpointRegistration extends LoggingAdapter {
     )
   }
 
+  private def corsWebSocketRejectionHandler(request: AkkaHttpRequest, accessLogIdGetter: Option[AkkaHttpRequest => String]): RejectionHandler = {
+    RejectionHandler
+      .newBuilder()
+      .handleAll[javadsl.CorsRejection] { rejections =>
+        val causes = rejections.map(_.cause.description).mkString(", ")
+        accessLogIdGetter.foreach(g => AccessLog.logAccess(request, g(request), StatusCodes.Forbidden))
+        complete((StatusCodes.Forbidden, s"CORS: $causes"))
+      }
+      .result()
+  }
+  private def corsWebsocketSupport(
+                           method: HttpMethod,
+                           corsSettings: Option[CorsSettings],
+                           request: AkkaHttpRequest,
+                           accessLogIdGetter: Option[AkkaHttpRequest => String]
+                         ): Directive0 =
+    corsSettings match {
+      case Some(cors) =>
+        handleRejections(corsWebSocketRejectionHandler(request, accessLogIdGetter)) &
+          CorsDirectives.cors(cors.withAllowedMethods((cors.allowedMethods ++ immutable.Seq(method)).distinct))
+      case None => pass
+    }
+
   // This works just as well as the corresponding method in the trait but doesn't require extending an actor to call
   def addAkkaWebsocketEndpoint[I: ClassTag, O <: Product: ClassTag, A <: Product: ClassTag](
       path: String,
@@ -190,9 +217,10 @@ object AkkaHttpEndpointRegistration extends LoggingAdapter {
       },
       authErrorHandler: AkkaHttpRequest => PartialFunction[Throwable, Route] = authErrorDefaultHandler,
       wsErrorHandler: PartialFunction[Throwable, Directive] = wsErrorDefaultHandler,
-      options: EndpointOptions = EndpointOptions.default
+      options: EndpointOptions = EndpointOptions.default,
   )(implicit ec: ExecutionContext, mat: Materializer): Unit = {
     val httpPath = parseRouteSegments(path)(log)
+    val accessLogger = Some(options.accessLogIdGetter)
     val route = ignoreTrailingSlash {
       httpPath { segments: AkkaHttpPathSegments =>
         extractRequest { request =>
@@ -211,25 +239,26 @@ object AkkaHttpEndpointRegistration extends LoggingAdapter {
                 locales,
                 None
               )
+              corsWebsocketSupport(request.method, options.corsSettings, reqWrapper,accessLogger) {
+                handleExceptions(ExceptionHandler({
+                  case ex: ExecutionException =>
+                    authErrorHandler(reqWrapper)(ex.getCause)
+                  case t: Throwable =>
+                    authErrorHandler(reqWrapper)(t)
+                })) {
+                  onSuccess(authHandler(reqWrapper)) { auth =>
+                    val ws = new AkkaHttpWebsocket(
+                      auth,
+                      textToInput,
+                      handleInMessage,
+                      outputToText,
+                      onClose,
+                      wsErrorHandler,
+                      options
+                    )
 
-              handleExceptions(ExceptionHandler({
-                case ex: ExecutionException =>
-                  authErrorHandler(reqWrapper)(ex.getCause)
-                case t: Throwable =>
-                  authErrorHandler(reqWrapper)(t)
-              })) {
-                onSuccess(authHandler(reqWrapper)) { auth =>
-                  val ws = new AkkaHttpWebsocket(
-                    auth,
-                    textToInput,
-                    handleInMessage,
-                    outputToText,
-                    onClose,
-                    wsErrorHandler,
-                    options
-                  )
-
-                  handleWebSocketMessages(ws.websocketHandler(reqWrapper))
+                    handleWebSocketMessages(ws.websocketHandler(reqWrapper))
+                  }
                 }
               }
             }
