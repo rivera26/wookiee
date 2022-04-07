@@ -169,7 +169,21 @@ trait AkkaHttpEndpointRegistration {
 }
 
 object AkkaHttpEndpointRegistration extends LoggingAdapter {
-  case class ErrorHolder(error: String)
+
+  val authErrorDefaultHandler: AkkaHttpRequest => PartialFunction[Throwable, Route] = { req: AkkaHttpRequest =>
+    {
+      case err: Throwable =>
+        implicit val formats: DefaultFormats.type = DefaultFormats
+        log.warn(s"Error in processing Auth for request on path [${req.path}]", err)
+        complete(write(ErrorHolder(err.getMessage)))
+    }
+  }
+
+  val wsErrorDefaultHandler: PartialFunction[Throwable, Directive] = {
+    case err: Throwable =>
+      log.warn("Websocket message encountered unexpected error, skipping event", err)
+      Supervision.Resume
+  }
 
   def defaultTimeoutResponse(request: HttpRequest): HttpResponse = {
     HttpResponse(
@@ -180,29 +194,6 @@ object AkkaHttpEndpointRegistration extends LoggingAdapter {
       )
     )
   }
-
-  private def corsWebSocketRejectionHandler(request: AkkaHttpRequest, accessLogIdGetter: Option[AkkaHttpRequest => String]): RejectionHandler = {
-    RejectionHandler
-      .newBuilder()
-      .handleAll[javadsl.CorsRejection] { rejections =>
-        val causes = rejections.map(_.cause.description).mkString(", ")
-        accessLogIdGetter.foreach(g => AccessLog.logAccess(request, g(request), StatusCodes.Forbidden))
-        complete((StatusCodes.Forbidden, s"CORS: $causes"))
-      }
-      .result()
-  }
-  private def corsWebsocketSupport(
-                           method: HttpMethod,
-                           corsSettings: Option[CorsSettings],
-                           request: AkkaHttpRequest,
-                           accessLogIdGetter: Option[AkkaHttpRequest => String]
-                         ): Directive0 =
-    corsSettings match {
-      case Some(cors) =>
-        handleRejections(corsWebSocketRejectionHandler(request, accessLogIdGetter)) &
-          CorsDirectives.cors(cors.withAllowedMethods((cors.allowedMethods ++ immutable.Seq(method)).distinct))
-      case None => pass
-    }
 
   // This works just as well as the corresponding method in the trait but doesn't require extending an actor to call
   def addAkkaWebsocketEndpoint[I: ClassTag, O <: Product: ClassTag, A <: Product: ClassTag](
@@ -217,7 +208,7 @@ object AkkaHttpEndpointRegistration extends LoggingAdapter {
       },
       authErrorHandler: AkkaHttpRequest => PartialFunction[Throwable, Route] = authErrorDefaultHandler,
       wsErrorHandler: PartialFunction[Throwable, Directive] = wsErrorDefaultHandler,
-      options: EndpointOptions = EndpointOptions.default,
+      options: EndpointOptions = EndpointOptions.default
   )(implicit ec: ExecutionContext, mat: Materializer): Unit = {
     val httpPath = parseRouteSegments(path)(log)
     val accessLogger = Some(options.accessLogIdGetter)
@@ -239,7 +230,7 @@ object AkkaHttpEndpointRegistration extends LoggingAdapter {
                 locales,
                 None
               )
-              corsWebsocketSupport(request.method, options.corsSettings, reqWrapper,accessLogger) {
+              corsWebsocketSupport(request.method, options.corsSettings, reqWrapper, accessLogger) {
                 handleExceptions(ExceptionHandler({
                   case ex: ExecutionException =>
                     authErrorHandler(reqWrapper)(ex.getCause)
@@ -271,6 +262,33 @@ object AkkaHttpEndpointRegistration extends LoggingAdapter {
     addRoute(endpointType, route)
   }
 
+  private def corsWebsocketSupport(
+      method: HttpMethod,
+      corsSettings: Option[CorsSettings],
+      request: AkkaHttpRequest,
+      accessLogIdGetter: Option[AkkaHttpRequest => String]
+  ): Directive0 =
+    corsSettings match {
+      case Some(cors) =>
+        handleRejections(corsWebSocketRejectionHandler(request, accessLogIdGetter)) &
+          CorsDirectives.cors(cors.withAllowedMethods((cors.allowedMethods ++ immutable.Seq(method)).distinct))
+      case None => pass
+    }
+
+  private def corsWebSocketRejectionHandler(
+      request: AkkaHttpRequest,
+      accessLogIdGetter: Option[AkkaHttpRequest => String]
+  ): RejectionHandler = {
+    RejectionHandler
+      .newBuilder()
+      .handleAll[javadsl.CorsRejection] { rejections =>
+        val causes = rejections.map(_.cause.description).mkString(", ")
+        accessLogIdGetter.foreach(g => AccessLog.logAccess(request, g(request), StatusCodes.Forbidden))
+        complete((StatusCodes.Forbidden, s"CORS: $causes"))
+      }
+      .result()
+  }
+
   protected[oracle] def addRoute(endpointType: EndpointType, route: Route): Unit = {
     endpointType match {
       case EndpointType.INTERNAL =>
@@ -283,18 +301,5 @@ object AkkaHttpEndpointRegistration extends LoggingAdapter {
     }
   }
 
-  val authErrorDefaultHandler: AkkaHttpRequest => PartialFunction[Throwable, Route] = { req: AkkaHttpRequest =>
-    {
-      case err: Throwable =>
-        implicit val formats: DefaultFormats.type = DefaultFormats
-        log.warn(s"Error in processing Auth for request on path [${req.path}]", err)
-        complete(write(ErrorHolder(err.getMessage)))
-    }
-  }
-
-  val wsErrorDefaultHandler: PartialFunction[Throwable, Directive] = {
-    case err: Throwable =>
-      log.warn("Websocket message encountered unexpected error, skipping event", err)
-      Supervision.Resume
-  }
+  case class ErrorHolder(error: String)
 }
